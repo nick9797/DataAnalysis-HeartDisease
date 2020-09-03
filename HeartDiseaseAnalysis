@@ -1,0 +1,115 @@
+#The data set is about patients who may have suffered from heart disease
+#There are 14 attributes in the data set that describe the patients in detail
+#This includes the patients's age, gender, and effects the heart disease had on the
+#patient, including cholesterol, heart rate, chest pain type, and blood pressure
+#The target is if the person has the disease or not (1 = yes, 0 = no)
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split 
+from sklearn.linear_model import LogisticRegression
+from sklearn import metrics
+
+#Load the data set, show the first 5 rows in the data set
+
+pima = pd.read_csv("heart.csv") 
+
+pima.head(5)
+
+#Show the attributes of the data
+
+pima.describe()
+
+#Change column names
+
+col_names = ['age', 'gender', 'chest_pain', 'blood_pressure', 'cholesterol', 'fasting_blood_sugar', 'cardio_results', 'heart_rate', 'angina','ST_depression','peak_slope','vessels','thal','has_disease'] #Column names
+
+pima.columns=[col_names]
+
+pima.head(5)
+
+#Clean the data
+
+rows, columns = pima.shape
+print("Rows:", rows)
+print("Columns:", columns)
+
+pima.isnull().any()  #True or false
+pima.isnull().sum() #How many are null
+#No empty columns, data is good
+
+#Split the data set in predictors and predicted
+
+feature_cols = ['age', 'gender', 'chest_pain','cardio_results', 'heart_rate','ST_depression','peak_slope']
+
+X = pima[feature_cols] # Features
+#pima.label
+y = pima.iloc[:,-1] # Target variable - if the person has heart disease or not
+print(y)
+
+#Split X and y into training and testing sets
+
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.3,random_state=0)
+#Test size 30% of data
+
+#Logistic regression
+
+logistic = LogisticRegression() #Create a logistics object
+logistic.fit(X_train,y_train)   #Train the model
+
+#logistic = LogisticRegression().fit(X_train,y_train) #Previous ones in one step
+
+y_pred=logistic.predict(X_test)
+print(y_pred)
+print(y_test)
+
+#Confusion matrix of test data
+
+Confusion_matrix = metrics.confusion_matrix(y_test, y_pred)
+print(Confusion_matrix)
+#32 true positive, 12 false positive, 9 false negative, 38 true negative
+
+import numpy as np
+
+class_names=[0,1]
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+# create heatmap
+sns.heatmap(pd.DataFrame(Confusion_matrix), annot=True, cmap="YlGnBu" ,fmt='g')
+ax.xaxis.set_label_position("top")
+plt.tight_layout()
+ax.set_ylim(2,0)
+plt.title('Confusion matrix of heart disease data set', y=1.1)
+plt.ylabel('Actual label')
+plt.xlabel('Predicted label')
+#Visual representation of confusion matrix
+
+#Metrics
+
+print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+print("Precision:",metrics.precision_score(y_test, y_pred))
+print("Recall:",metrics.recall_score(y_test, y_pred))
+#Data set is 77% accurate
+#80% of the predictions were correct
+
+#Receiver Operating Characteristic(ROC) curve 
+
+y_pred_proba = logistic.predict_proba(X_test)[::,1] #Get probailities 
+
+fpr, tpr, _ = metrics.roc_curve(y_test,  y_pred_proba)
+auc = metrics.roc_auc_score(y_test, y_pred_proba)
+
+plt.plot(fpr,tpr,label="data 1, auc="+str(auc))
+plt.ylabel('tpr')
+plt.xlabel('fpr')
+plt.legend(loc=4)
+plt.show()
+
+#I think it's a decent model - the prediction was about 75-80% correct, but I do wish
+#the accuracy and recall of the model was higher 
+#Heart disease is a serious medical issue, and data sets should have better accuracy when
+#diagnosing patients
